@@ -26,7 +26,7 @@
       padding:9px 12px;border-radius:14px;transition:.15s ease;display:inline-flex;align-items:center;gap:8px}
     .nav a:hover{transform:translateY(-1px);background: rgba(255,255,255,.10)}
 
-    .wrap{max-width:1100px;margin:0 auto;display:grid;grid-template-columns: 1fr 360px;gap:14px}
+    .wrap{max-width:1100px;margin:0 auto;display:grid;grid-template-columns: 1fr;gap:14px}
     @media (max-width: 980px){.wrap{grid-template-columns:1fr}}
 
     .card{position:relative;background:linear-gradient(180deg, rgba(11,16,32,.80), rgba(11,16,32,.60));
@@ -70,6 +70,13 @@
     .kpi{display:flex;gap:10px;flex-wrap:wrap}
     .kpi .box{flex:1;min-width:120px;padding:10px 12px;border-radius:16px;border:1px solid var(--line);background: rgba(0,0,0,.16)}
     .kpi .num{font-size:22px;font-weight:800;letter-spacing:.02em}
+
+
+    /* --- compact HUD (progress / score / timer) --- */
+    .hud{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;align-items:stretch}
+    .hud .box{min-width:100px;padding:8px 10px;border-radius:16px;border:1px solid var(--line);background: rgba(0,0,0,.16)}
+    .hud .num{font-size:16px;font-weight:800;letter-spacing:.02em}
+    @media (max-width:600px){.hud .box{min-width:90px}}
     .hr{height:1px;background: rgba(255,255,255,.10);margin:12px 0}
     details summary{cursor:pointer;color:var(--muted)}
     table{width:100%;border-collapse:collapse;font-size:12px}
@@ -113,17 +120,30 @@
   <div class="wrap">
     <section class="card">
       <div id="fxLayer" class="fx-layer"></div>
+      
       <div class="row space">
-        <div>
-          <div class="muted small" id="statusLine">未開始</div>
-          <div class="sentence" id="sentenceLine">右の設定で開始してください。</div>
-          <div class="slotline" id="slots"></div>
-          <div class="chips" id="chips"></div>
-          <div id="toast" class="toast" style="display:none"></div>
+        <div class="muted small" id="statusLine">未開始</div>
+        <div class="hud" aria-label="HUD">
+          <div class="box">
+            <div class="muted small">進捗</div>
+            <div class="num" id="kpiProg">0/0</div>
+          </div>
+          <div class="box">
+            <div class="muted small">タイマー</div>
+            <div class="num" id="kpiTime">∞</div>
+          </div>
+          <div class="box">
+            <div class="muted small">スコア</div>
+            <div class="num" id="kpiScore">0</div>
+          </div>
         </div>
       </div>
 
-      <div class="hr"></div>
+      <div class="sentence" id="sentenceLine">下の設定で開始してください。</div>
+      <div class="slotline" id="slots"></div>
+      <div class="chips" id="chips"></div>
+      <div id="toast" class="toast" style="display:none"></div>
+<div class="hr"></div>
 
       <div class="row">
         <button id="btnSkip" class="bad">⏭ スキップ</button>
@@ -135,83 +155,65 @@
         使い方: 下の選択肢（丸いチップ）をクリック → 空所に入ります。<br/>
         入れ直したいときは、空所の単語をクリックして戻せます。
       </div>
-    </section>
-
-    <aside class="card">
-      <div class="kpi">
-        <div class="box">
-          <div class="muted small">進捗</div>
-          <div class="num" id="kpiProg">0/0</div>
-        </div>
-        <div class="box">
-          <div class="muted small">スコア</div>
-          <div class="num" id="kpiScore">0</div>
-        </div>
-      </div>
 
       <div class="hr"></div>
 
-      <div class="grid">
-        <div>
-          <label>モード</label>
-          <select id="mode">
-            <option value="practice">練習（1人）</option>
-            <option value="duel">対戦（同端末・交代）</option>
-          </select>
-        </div>
-        <div>
-          <label>出題数</label>
-          <input id="count" type="number" min="1" value="10" />
-        </div>
-      </div>
-
-      <div class="grid" style="margin-top:10px">
-        <div>
-          <label>制限時間（秒 / 1問）</label>
-          <input id="timePerQ" type="number" min="0" value="0" />
-        </div>
-        <div>
-          <label>出題順</label>
-          <select id="order">
-            <option value="random">ランダム</option>
-            <option value="inorder">登録順</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="grid" style="margin-top:10px">
-        <div class="toggle">
-          <input class="ck" id="optSpeak" type="checkbox" checked />
-          <label for="optSpeak">🔊 発音（en-US）</label>
-        </div>
-        <div class="toggle">
-          <input class="ck" id="optSfx" type="checkbox" checked />
-          <label for="optSfx">🎵 効果音</label>
-        </div>
-      </div>
-
-      <div class="row" style="margin-top:12px">
+      <div class="row">
         <button id="btnStart" class="primary">▶ 開始</button>
         <button id="btnStop">■ 終了</button>
+        <span class="small muted">※ 設定は下の「⚙ 設定」から変更できます</span>
       </div>
 
-      <div class="hr"></div>
+      <details id="settingsPanel" style="margin-top:10px">
+        <summary>⚙ 設定（出題・時間・音など）</summary>
 
-      <details>
-        <summary>問題バンク（確認用）</summary>
-        <div class="small muted" style="margin-top:8px">
-          ここは将来的に消してOKな枠です。今は動作確認用に残しています。
+        <div class="grid" style="margin-top:10px">
+          <div>
+            <label>モード</label>
+            <select id="mode">
+              <option value="practice">練習（1人）</option>
+              <option value="duel">対戦（同端末・交代）</option>
+            </select>
+          </div>
+          <div>
+            <label>出題数</label>
+            <input id="count" type="number" min="1" value="10" />
+          </div>
         </div>
-        <table style="margin-top:8px">
-          <thead><tr><th>ID</th><th>英文</th></tr></thead>
-          <tbody id="bankTable"></tbody>
-        </table>
+
+        <div class="grid" style="margin-top:10px">
+          <div>
+            <label>制限時間（秒 / 1問）</label>
+            <input id="timePerQ" type="number" min="0" value="0" />
+          </div>
+          <div>
+            <label>出題順</label>
+            <select id="order">
+              <option value="random">ランダム</option>
+              <option value="inorder">登録順</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid" style="margin-top:10px">
+          <div class="toggle">
+            <input class="ck" id="optSpeak" type="checkbox" checked />
+            <label for="optSpeak">🔊 発音（en-US）</label>
+          </div>
+          <div class="toggle">
+            <input class="ck" id="optSfx" type="checkbox" checked />
+            <label for="optSfx">🎵 効果音</label>
+          </div>
+        </div>
+
+        <div class="small muted" style="margin-top:10px">
+          ※ バンクが0件なら <a href="seijo_edit.html" style="color:var(--text)">問題編集</a>で作成してください。
+        </div>
       </details>
 
-      <div class="small muted" style="margin-top:10px">
-        ※ バンクが0件なら <a href="seijo_edit.html" style="color:var(--text)">問題編集</a>で作成してください。
-      </div>
-    </aside>
+    </section>
+
+    
   </div>
 
 <script>
@@ -225,6 +227,7 @@
   const elStatus = $('statusLine');
   const elProg = $('kpiProg');
   const elScore = $('kpiScore');
+  const elTime = $('kpiTime');
   const elBankTable = $('bankTable');
   const elFx = $('fxLayer');
 
@@ -475,11 +478,12 @@
     slots = [];
     options = [];
     elStatus.textContent = '終了';
-    elSentence.textContent = '右の設定で開始してください。';
+    elSentence.textContent = '下の設定で開始してください。';
     elSlots.innerHTML = '';
     elChips.innerHTML = '';
     hideToast();
     elProg.textContent = '0/0';
+    if(elTime) elTime.textContent = '--';
   }
 
   function clearTimer(){
@@ -490,15 +494,20 @@
     clearTimer();
     const sec = Math.max(0, parseInt($('timePerQ').value || '0', 10));
     if(sec <= 0){
+      timeLeft = 0;
       elStatus.textContent = statusText();
+      if(elTime) elTime.textContent = '∞';
       return;
     }
     timeLeft = sec;
     elStatus.textContent = statusText() + ` | ⏳ ${timeLeft}s`;
+    if(elTime) elTime.textContent = `${timeLeft}s`;
     timer = setInterval(()=>{
       timeLeft -= 1;
+      if(elTime) elTime.textContent = `${Math.max(0, timeLeft)}s`;
       if(timeLeft <= 0){
         clearTimer();
+        if(elTime) elTime.textContent = '0s';
         showToast('bad', '時間切れ… 次の問題へ');
         setTimeout(()=>{ hideToast(); skipQuestion(true); }, 700);
         return;
@@ -553,7 +562,7 @@
     }else{
       showToast('good', `終了！ スコア: <b>${score}</b> / ${quiz.length}`);
     }
-    elSentence.textContent = 'おつかれさまでした。右の「開始」でまた遊べます。';
+    elSentence.textContent = 'おつかれさまでした。下の「開始」でまた遊べます。';
     elSlots.innerHTML = '';
     elChips.innerHTML = '';
   }
