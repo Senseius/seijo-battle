@@ -30,9 +30,14 @@
     @media (max-width: 980px){.wrap{grid-template-columns:1fr}}
 
     .card{position:relative;background:linear-gradient(180deg, rgba(11,16,32,.80), rgba(11,16,32,.60));
-      border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
+      border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;
+      display:flex;flex-direction:column;
+      min-height: calc(100vh - 120px);
+      padding-bottom: calc(14px + env(safe-area-inset-bottom));}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .row.space{justify-content:space-between}
+    .bottom-controls{margin-top:auto;width:100%}
+    .bottom-controls .row{justify-content:center}
     .muted{color:var(--muted)}
     .small{font-size:12px}
 
@@ -115,7 +120,7 @@
     <div class="brand">
       <div class="logo">🧩</div>
       <div>
-        <h1>整序バトル</h1>
+        <h1>整序バトル（プレイ）</h1>
         <div class="muted small">最後の単語を置いた瞬間に判定 → 正解なら自動で次へ</div>
       </div>
     </div>
@@ -153,22 +158,6 @@
         <div class="chips" id="chips"></div>
         <div id="toast" class="toast" style="display:none"></div>
       </div>
-<div class="hr"></div>
-
-      <div class="row">
-        <button id="btnSkip" class="bad">⏭ スキップ</button>
-        <button id="btnReveal">👀 答え</button>
-        <button id="btnReset" title="いまの問題を最初から">↩ リセット</button>
-      </div>
-
-      <div class="hr"></div>
-
-      <div class="row">
-        <button id="btnStart" class="primary">▶ 開始</button>
-        <button id="btnStop">■ 終了</button>
-        <span class="small muted">※ 設定は下の「⚙ 設定」から変更できます</span>
-      </div>
-
       <details id="settingsPanel" style="margin-top:10px">
         <summary>⚙ 設定（出題・時間・音など）</summary>
 
@@ -215,6 +204,29 @@
           ※ バンクが0件なら <a href="seijo_edit.html" style="color:var(--text)">問題編集</a>で作成してください。
         </div>
       </details>
+
+      <div class="bottom-controls" aria-label="Bottom controls">
+        <div class="hr"></div>
+
+        <div class="row">
+          <button id="btnSkip" class="bad">⏭ スキップ</button>
+          <button id="btnReveal">👀 答え</button>
+          <button id="btnReset" title="いまの問題を最初から">↩ リセット</button>
+        </div>
+
+        <div class="small muted" style="margin-top:10px;text-align:center">
+          使い方: 下の選択肢（丸いチップ）をクリック → 空所に入ります。<br/>
+          入れ直したいときは、空所の単語をクリックして戻せます。
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="row">
+          <button id="btnStart" class="primary">▶ 開始</button>
+          <button id="btnStop">■ 終了</button>
+          <span class="small muted">※ 設定は上の「⚙ 設定」から変更できます</span>
+        </div>
+      </div>
 
     </section>
 
