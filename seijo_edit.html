@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>整序バトル - 問題編集</title>
+  <script src="seijo_common.js"></script>
+  <style>
+    :root{--bg:#0b1020;--text:#eaf0ff;--muted:#c7d0ee;--line:rgba(255,255,255,.12);--shadow:0 10px 25px rgba(0,0,0,.35);--accent:#8b5cf6;--good:#22c55e;--bad:#ef4444;--radius:18px;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(139,92,246,.45), transparent 55%),
+                  radial-gradient(900px 500px at 100% 10%, rgba(34,197,94,.18), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      padding:16px;
+    }
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:1200px;margin:0 auto 14px}
+    .brand{display:flex;align-items:center;gap:10px}
+    .brand .logo{width:38px;height:38px;border-radius:14px;display:grid;place-items:center;
+      background:linear-gradient(135deg, rgba(139,92,246,.95), rgba(34,197,94,.55));box-shadow:var(--shadow);}
+    .brand h1{margin:0;font-size:16px;letter-spacing:.03em}
+    .nav{display:flex;gap:10px;flex-wrap:wrap}
+    .nav a{color:var(--text);text-decoration:none;border:1px solid var(--line);background: rgba(255,255,255,.06);
+      padding:9px 12px;border-radius:14px;transition:.15s ease;display:inline-flex;align-items:center;gap:8px}
+    .nav a:hover{transform:translateY(-1px);background: rgba(255,255,255,.10)}
+
+    .wrap{max-width:1200px;margin:0 auto;display:grid;grid-template-columns: 1fr 1.1fr;gap:14px}
+    @media (max-width: 980px){.wrap{grid-template-columns:1fr}}
+
+    .card{background:linear-gradient(180deg, rgba(11,16,32,.80), rgba(11,16,32,.60));
+      border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;}
+    .card h2{margin:0 0 10px;font-size:14px;color:rgba(234,240,255,.92)}
+    .sub{margin:0 0 12px;color:var(--muted);font-size:12px;line-height:1.6}
+
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    input, textarea, select{width:100%;padding:10px 11px;border-radius:14px;border:1px solid var(--line);
+      background: rgba(255,255,255,.06);color:var(--text);font:inherit;outline:none}
+    textarea{min-height:88px;resize:vertical}
+    label{font-size:12px;color:var(--muted)}
+    .grid{display:grid;grid-template-columns: 1fr 1fr;gap:10px}
+    @media (max-width: 520px){.grid{grid-template-columns:1fr}}
+
+    .btn{border:1px solid var(--line);background: rgba(255,255,255,.06);padding:10px 12px;border-radius:14px;cursor:pointer;
+      transition:.15s ease;color:var(--text);font:inherit}
+    .btn:hover{transform:translateY(-1px);background: rgba(255,255,255,.10)}
+    .btn.primary{background: linear-gradient(135deg, rgba(139,92,246,.95), rgba(34,197,94,.55));border-color: rgba(255,255,255,.12)}
+    .btn.bad{background: rgba(239,68,68,.18);border-color: rgba(239,68,68,.35)}
+
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    th,td{padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.10);vertical-align:top}
+    th{color:rgba(167,179,214,.90);font-weight:600;text-align:left}
+    tr.sel{background: rgba(139,92,246,.14)}
+    .small{font-size:11px;color:rgba(167,179,214,.85)}
+
+    .preview{border:1px dashed rgba(255,255,255,.18);border-radius:14px;padding:12px;min-height:80px}
+    .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .chip{border:1px solid rgba(255,255,255,.12);background: rgba(255,255,255,.06);padding:6px 10px;border-radius:999px;font-size:12px;color:rgba(234,240,255,.92)}
+    .chip.extra{border-color: rgba(239,68,68,.35);background: rgba(239,68,68,.12)}
+    .msg{margin-top:10px;font-size:12px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">✏</div>
+      <h1>問題編集</h1>
+    </div>
+    <nav class="nav">
+      <a href="index.html">🏠 入口</a>
+      <a href="seijo_play.html">▶ プレイ</a>
+    </nav>
+  </header>
+
+  <div class="wrap">
+    <section class="card">
+      <h2>問題バンク</h2>
+      <p class="sub">クリックで編集欄に読み込み。保存すると自動でプレイ側にも反映されます（同じブラウザ内）。</p>
+
+      <div class="row" style="margin-bottom:10px">
+        <input id="qSearch" placeholder="検索: 英文 / 日本語 / ID" style="flex:1;min-width:220px" />
+        <button class="btn" id="btnNew">＋ 新規</button>
+        <button class="btn primary" id="btnSave">保存</button>
+        <button class="btn bad" id="btnDelete">削除</button>
+      </div>
+
+      <div class="row" style="margin-bottom:10px">
+        <button class="btn" id="btnSample">サンプル投入</button>
+        <button class="btn" id="btnExportJson">JSON書き出し</button>
+        <button class="btn" id="btnImportJson">JSON読み込み</button>
+        <input type="file" id="fileJson" accept="application/json" style="display:none" />
+        <button class="btn" id="btnExportCsv">CSV書き出し</button>
+        <button class="btn" id="btnImportCsv">CSV読み込み</button>
+        <input type="file" id="fileCsv" accept="text/csv,.csv" style="display:none" />
+      </div>
+
+      <div class="small" id="bankMeta">-</div>
+
+      <div style="margin-top:10px;max-height:420px;overflow:auto;border:1px solid rgba(255,255,255,.10);border-radius:14px">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:72px">ID</th>
+              <th>英文</th>
+              <th style="width:34%">日本語</th>
+              <th style="width:80px">更新</th>
+            </tr>
+          </thead>
+          <tbody id="bankBody"></tbody>
+        </table>
+      </div>
+
+      <div class="msg">ヒント: 編集がうまく保存されない場合は、<code>file://</code> 直開きではなくローカルサーバ（<code>python -m http.server 8000</code>）で開くと安定します。</div>
+    </section>
+
+    <section class="card">
+      <h2>編集</h2>
+      <p class="sub">基本は「英文」だけでOK。必要に応じて multi_terms / 不足語 / 不用語 / 範囲を設定します。</p>
+
+      <div class="grid">
+        <div>
+          <label>ID（空なら自動採番）</label>
+          <input id="fId" placeholder="例: 12" />
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:10px">
+          <label style="flex:1">日本語訳を問題に表示</label>
+          <input type="checkbox" id="fShowJp" style="width:22px;height:22px" />
+        </div>
+      </div>
+
+      <div style="margin-top:10px">
+        <label>英文（必須）</label>
+        <textarea id="fEn" placeholder="例: I have lived in Osaka for three years."></textarea>
+      </div>
+
+      <div style="margin-top:10px">
+        <label>日本語訳（任意）</label>
+        <textarea id="fJa" placeholder="例: 私は大阪に3年間住んでいます。"></textarea>
+      </div>
+
+      <div class="grid" style="margin-top:10px">
+        <div>
+          <label>1語として扱う語句（multi_terms）</label>
+          <input id="fMulti" placeholder="例: junior high school, a lot of" />
+        </div>
+        <div>
+          <label>不足させる語（missing_words）</label>
+          <input id="fMissing" placeholder="例: not, as" />
+        </div>
+        <div>
+          <label>不用語（extra_words）</label>
+          <input id="fExtra" placeholder="例: really" />
+        </div>
+        <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <label>Start（1から）</label>
+            <input id="fStart" type="number" min="1" step="1" value="1" />
+          </div>
+          <div>
+            <label>Ending（0=最後まで）</label>
+            <input id="fEnd" type="number" min="0" step="1" value="0" />
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px">
+        <h2 style="margin-bottom:8px">プレビュー</h2>
+        <div class="preview" id="pvSentence"></div>
+        <div class="chips" id="pvChips"></div>
+      </div>
+
+      <div class="msg" id="editMsg"></div>
+    </section>
+  </div>
+
+  <script>
+    const $ = (id)=>document.getElementById(id);
+
+    let bank = [];
+    let selectedIndex = -1;
+
+    function refresh(){
+      bank = readBank();
+      renderBank();
+      updateMeta();
+      if(selectedIndex >= bank.length) selectedIndex = -1;
+      if(selectedIndex === -1) clearForm(false);
+      updatePreview();
+    }
+
+    function updateMeta(){
+      const total = bank.length;
+      const ok = bank.filter(q=> (q.en_sentence||'').trim()).length;
+      $('bankMeta').textContent = `登録: ${total}問（有効: ${ok}問）  / 保存キー: ${LS_KEY}`;
+    }
+
+    function renderBank(){
+      const body = $('bankBody');
+      const query = ($('qSearch').value||'').trim().toLowerCase();
+      body.innerHTML = '';
+
+      const rows = bank.map((q, idx)=>({q, idx})).filter(({q})=>{
+        if(!query) return true;
+        const blob = `${q.example_id} ${q.en_sentence} ${q.ja_translation}`.toLowerCase();
+        return blob.includes(query);
+      });
+
+      for(const {q, idx} of rows){
+        const tr = document.createElement('tr');
+        if(idx === selectedIndex) tr.classList.add('sel');
+        tr.style.cursor = 'pointer';
+        tr.addEventListener('click', ()=>{
+          selectedIndex = idx;
+          loadToForm(q);
+          renderBank();
+          updatePreview();
+        });
+
+        const tdId = document.createElement('td');
+        tdId.textContent = q.example_id || '-';
+
+        const tdEn = document.createElement('td');
+        tdEn.textContent = (q.en_sentence||'').slice(0, 120);
+
+        const tdJa = document.createElement('td');
+        tdJa.textContent = (q.ja_translation||'').slice(0, 120);
+
+        const tdUp = document.createElement('td');
+        tdUp.textContent = (q.updated_at||'').slice(2, 10).replaceAll('-', '/');
+
+        tr.append(tdId, tdEn, tdJa, tdUp);
+        body.appendChild(tr);
+      }
+    }
+
+    function clearForm(showMsg=true){
+      selectedIndex = -1;
+      $('fId').value = '';
+      $('fEn').value = '';
+      $('fJa').value = '';
+      $('fMulti').value = '';
+      $('fMissing').value = '';
+      $('fExtra').value = '';
+      $('fStart').value = 1;
+      $('fEnd').value = 0;
+      $('fShowJp').checked = true;
+      if(showMsg) setMsg('新規作成モード', '');
+      renderBank();
+      updatePreview();
+    }
+
+    function loadToForm(q){
+      $('fId').value = q.example_id || '';
+      $('fEn').value = q.en_sentence || '';
+      $('fJa').value = q.ja_translation || '';
+      $('fMulti').value = q.multi_terms || '';
+      $('fMissing').value = q.missing_words || '';
+      $('fExtra').value = q.extra_words || '';
+      $('fStart').value = q.start ?? 1;
+      $('fEnd').value = q.ending ?? 0;
+      $('fShowJp').checked = (q.show_jp !== false);
+      setMsg(`編集: ID ${q.example_id || '(未設定)'}`, '');
+    }
+
+    function readForm(){
+      const en = ($('fEn').value||'').trim();
+      const ja = ($('fJa').value||'').trim();
+      let id = ($('fId').value||'').trim();
+      const multi = ($('fMulti').value||'').trim();
+      const missing = ($('fMissing').value||'').trim();
+      const extra = ($('fExtra').value||'').trim();
+      const start = parseInt(($('fStart').value||'1'), 10);
+      const ending = parseInt(($('fEnd').value||'0'), 10);
+      const showJp = $('fShowJp').checked;
+
+      if(!en){
+        throw new Error('英文が空です。');
+      }
+
+      if(!id){
+        id = String(nextAutoId(readBank()));
+      }
+
+      return {
+        example_id: id,
+        en_sentence: en,
+        ja_translation: ja,
+        multi_terms: multi,
+        missing_words: missing,
+        extra_words: extra,
+        start: Number.isFinite(start) && start > 0 ? start : 1,
+        ending: Number.isFinite(ending) && ending >= 0 ? ending : 0,
+        show_jp: !!showJp,
+        updated_at: nowIso(),
+      };
+    }
+
+    function upsert(){
+      const q = readForm();
+      const cur = readBank();
+      const hit = cur.findIndex(x => String(x.example_id) === String(q.example_id));
+
+      if(hit >= 0){
+        cur[hit] = {...cur[hit], ...q};
+        selectedIndex = hit;
+        writeBank(cur);
+        setMsg(`保存しました（更新）: ID ${q.example_id}`, 'good');
+      }else{
+        cur.push(q);
+        writeBank(cur);
+        selectedIndex = cur.length - 1;
+        setMsg(`保存しました（追加）: ID ${q.example_id}`, 'good');
+      }
+      refresh();
+    }
+
+    function removeSelected(){
+      if(selectedIndex < 0 || selectedIndex >= bank.length){
+        setMsg('削除する問題が選択されていません。', '');
+        return;
+      }
+      const id = bank[selectedIndex].example_id;
+      const cur = readBank();
+      const next = cur.filter(q=> String(q.example_id) !== String(id));
+      writeBank(next);
+      setMsg(`削除しました: ID ${id}`, 'bad');
+      selectedIndex = -1;
+      refresh();
+    }
+
+    function setMsg(text, kind){
+      const el = $('editMsg');
+      el.textContent = text;
+      if(kind === 'good') el.style.color = 'rgba(34,197,94,.95)';
+      else if(kind === 'bad') el.style.color = 'rgba(239,68,68,.95)';
+      else el.style.color = 'rgba(167,179,214,.90)';
+    }
+
+    function updatePreview(){
+      const pvSentence = $('pvSentence');
+      const pvChips = $('pvChips');
+      pvChips.innerHTML = '';
+      pvSentence.textContent = '';
+
+      const en = ($('fEn').value||'').trim();
+      if(!en){
+        pvSentence.textContent = 'ここにプレビューが出ます';
+        return;
+      }
+
+      const q = {
+        en_sentence: en,
+        multi_terms: ($('fMulti').value||'').trim(),
+        missing_words: ($('fMissing').value||'').trim(),
+        extra_words: ($('fExtra').value||'').trim(),
+        start: parseInt(($('fStart').value||'1'),10) || 1,
+        ending: parseInt(($('fEnd').value||'0'),10) || 0,
+      };
+
+      try{
+        const built = buildPuzzle(q);
+        pvSentence.textContent = built.previewSentence;
+        for(const chip of built.choices){
+          const span = document.createElement('span');
+          span.className = 'chip' + (chip.isExtra ? ' extra' : '');
+          span.textContent = chip.text;
+          pvChips.appendChild(span);
+        }
+      }catch(e){
+        pvSentence.textContent = `プレビュー生成エラー: ${e.message}`;
+      }
+    }
+
+    function loadSample(){
+      const sample = [
+        {example_id:'1', en_sentence:'I have lived in Osaka for three years.', ja_translation:'私は大阪に3年間住んでいます。', multi_terms:'', start:2, ending:0, missing_words:'', extra_words:'really', show_jp:true, updated_at: nowIso()},
+        {example_id:'2', en_sentence:'We are going to take a walk in the park.', ja_translation:'私たちは公園を散歩するつもりです。', multi_terms:'take a walk', start:3, ending:0, missing_words:'', extra_words:'', show_jp:true, updated_at: nowIso()},
+        {example_id:'3', en_sentence:'If I had studied harder, I would be happier now.', ja_translation:'もしもっと一生懸命勉強していたら、今もっと幸せだっただろう。', multi_terms:'', start:1, ending:0, missing_words:'', extra_words:'', show_jp:false, updated_at: nowIso()},
+      ];
+      const cur = readBank();
+      const merged = [...cur];
+      for(const q of sample){
+        if(merged.some(x=>String(x.example_id)===String(q.example_id))) continue;
+        merged.push(q);
+      }
+      writeBank(merged);
+      setMsg('サンプルを投入しました。', 'good');
+      refresh();
+    }
+
+    async function importJsonFile(file){
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if(!Array.isArray(data)) throw new Error('JSONは配列形式である必要があります。');
+      const merged = mergeBanks(readBank(), data);
+      writeBank(merged);
+      setMsg(`JSONを読み込みました（合計 ${merged.length}問）`, 'good');
+      refresh();
+    }
+
+    async function importCsvFile(file){
+      const text = await file.text();
+      const rows = parseCsv(text);
+      const data = csvRowsToBank(rows);
+      const merged = mergeBanks(readBank(), data);
+      writeBank(merged);
+      setMsg(`CSVを読み込みました（合計 ${merged.length}問）`, 'good');
+      refresh();
+    }
+
+    function mergeBanks(base, incoming){
+      const out = [...normalizeBank(base)];
+      for(const q of normalizeBank(incoming)){
+        const hit = out.findIndex(x=>String(x.example_id)===String(q.example_id));
+        if(hit >= 0) out[hit] = {...out[hit], ...q, updated_at: nowIso()};
+        else out.push({...q, updated_at: nowIso()});
+      }
+      return normalizeBank(out);
+    }
+
+    // ===== Events =====
+    ['fEn','fJa','fMulti','fMissing','fExtra','fStart','fEnd','fShowJp'].forEach(id=>{
+      const el = $(id);
+      el.addEventListener('input', updatePreview);
+      el.addEventListener('change', updatePreview);
+    });
+
+    $('qSearch').addEventListener('input', renderBank);
+    $('btnNew').addEventListener('click', ()=>clearForm(true));
+    $('btnSave').addEventListener('click', ()=>{
+      try{ upsert(); }
+      catch(e){ setMsg(e.message, 'bad'); }
+    });
+    $('btnDelete').addEventListener('click', removeSelected);
+
+    $('btnSample').addEventListener('click', loadSample);
+
+    $('btnExportJson').addEventListener('click', ()=>{
+      const data = JSON.stringify(readBank(), null, 2);
+      downloadText(`seijo_bank_${todayYmd()}.json`, data, 'application/json');
+    });
+    $('btnImportJson').addEventListener('click', ()=> $('fileJson').click());
+    $('fileJson').addEventListener('change', async (e)=>{
+      const f = e.target.files?.[0];
+      if(!f) return;
+      try{ await importJsonFile(f); }
+      catch(err){ setMsg(err.message, 'bad'); }
+      e.target.value = '';
+    });
+
+    $('btnExportCsv').addEventListener('click', ()=>{
+      const csv = bankToCsv(readBank());
+      downloadText(`seijo_bank_${todayYmd()}.csv`, csv, 'text/csv');
+    });
+    $('btnImportCsv').addEventListener('click', ()=> $('fileCsv').click());
+    $('fileCsv').addEventListener('change', async (e)=>{
+      const f = e.target.files?.[0];
+      if(!f) return;
+      try{ await importCsvFile(f); }
+      catch(err){ setMsg(err.message, 'bad'); }
+      e.target.value = '';
+    });
+
+    // boot
+    refresh();
+
+  </script>
+</body>
+</html>

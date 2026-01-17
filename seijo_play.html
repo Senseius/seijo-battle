@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>整序バトル - プレイ</title>
+  <script src="seijo_common.js"></script>
+  <style>
+    :root{--bg:#0b1020;--text:#eaf0ff;--muted:#c7d0ee;--line:rgba(255,255,255,.12);--shadow:0 10px 25px rgba(0,0,0,.35);--accent:#8b5cf6;--good:#22c55e;--bad:#ef4444;--radius:18px;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(139,92,246,.45), transparent 55%),
+                  radial-gradient(900px 500px at 100% 10%, rgba(34,197,94,.18), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      padding:16px;
+    }
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:1100px;margin:0 auto 14px}
+    .brand{display:flex;align-items:center;gap:10px}
+    .brand .logo{width:38px;height:38px;border-radius:14px;display:grid;place-items:center;
+      background:linear-gradient(135deg, rgba(139,92,246,.95), rgba(34,197,94,.55));box-shadow:var(--shadow);}
+    .brand h1{margin:0;font-size:16px;letter-spacing:.03em}
+    .nav{display:flex;gap:10px;flex-wrap:wrap}
+    .nav a{color:var(--text);text-decoration:none;border:1px solid var(--line);background: rgba(255,255,255,.06);
+      padding:9px 12px;border-radius:14px;transition:.15s ease;display:inline-flex;align-items:center;gap:8px}
+    .nav a:hover{transform:translateY(-1px);background: rgba(255,255,255,.10)}
+
+    .wrap{max-width:1100px;margin:0 auto;display:grid;grid-template-columns: 1fr 360px;gap:14px}
+    @media (max-width: 980px){.wrap{grid-template-columns:1fr}}
+
+    .card{position:relative;background:linear-gradient(180deg, rgba(11,16,32,.80), rgba(11,16,32,.60));
+      border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .row.space{justify-content:space-between}
+    .muted{color:var(--muted)}
+    .small{font-size:12px}
+
+    label{font-size:12px;color:var(--muted)}
+    input,select{width:100%;padding:10px 12px;border-radius:14px;border:1px solid var(--line);
+      background: rgba(0,0,0,.20);color:var(--text);outline:none}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+    button{border:1px solid var(--line);background: rgba(255,255,255,.06);padding:10px 12px;border-radius:14px;cursor:pointer;
+      transition:.15s ease;color:var(--text);font:inherit}
+    button:hover{transform:translateY(-1px);background: rgba(255,255,255,.10)}
+    button.primary{background: linear-gradient(135deg, rgba(139,92,246,.95), rgba(34,197,94,.55));border-color: rgba(255,255,255,.12)}
+    button.good{border-color: rgba(34,197,94,.40)}
+    button.bad{border-color: rgba(239,68,68,.40)}
+
+    .sentence{font-size:18px;line-height:1.7}
+    .slotline{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+    .slot{min-width:76px;padding:8px 10px;border-radius:14px;border:1px dashed rgba(255,255,255,.22);background: rgba(0,0,0,.16);
+      text-align:center;cursor:pointer;user-select:none}
+    .slot.filled{border-style:solid;background: rgba(255,255,255,.06)}
+    .slot.correct{border-color: rgba(34,197,94,.55);background: rgba(34,197,94,.12)}
+    .slot.wrong{border-color: rgba(239,68,68,.55);background: rgba(239,68,68,.10)}
+
+    .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+    .chip{padding:8px 10px;border-radius:999px;border:1px solid var(--line);background: rgba(255,255,255,.06);cursor:pointer;
+      user-select:none;transition:.15s ease}
+    .chip:hover{transform:translateY(-1px);background: rgba(255,255,255,.10)}
+    .chip.extra{opacity:.75;border-style:dashed}
+    .chip.used{opacity:.35;pointer-events:none}
+
+    .toast{margin-top:10px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background: rgba(0,0,0,.16)}
+    .toast.good{border-color: rgba(34,197,94,.45);background: rgba(34,197,94,.10)}
+    .toast.bad{border-color: rgba(239,68,68,.45);background: rgba(239,68,68,.10)}
+
+    .kpi{display:flex;gap:10px;flex-wrap:wrap}
+    .kpi .box{flex:1;min-width:120px;padding:10px 12px;border-radius:16px;border:1px solid var(--line);background: rgba(0,0,0,.16)}
+    .kpi .num{font-size:22px;font-weight:800;letter-spacing:.02em}
+    .hr{height:1px;background: rgba(255,255,255,.10);margin:12px 0}
+    details summary{cursor:pointer;color:var(--muted)}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,.08);vertical-align:top}
+    tbody tr:hover{background: rgba(255,255,255,.04)}
+    code{font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+
+    /* --- tiny settings toggles --- */
+    .toggle{display:flex;align-items:center;gap:10px}
+    .toggle input[type="checkbox"]{width:18px;height:18px;accent-color:var(--accent)}
+
+    /* --- FX --- */
+    .fx-layer{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+    .fx-pop{animation: fxPop .18s ease}
+    @keyframes fxPop{0%{transform:scale(1)}50%{transform:scale(1.01)}100%{transform:scale(1)}}
+    .fx-particle{position:absolute;width:8px;height:8px;border-radius:999px;background: rgba(255,255,255,.92);
+      transform: translate(-50%, -50%);
+      animation: fxBurst .55s ease-out forwards;}
+    @keyframes fxBurst{
+      0%{opacity:0;transform:translate(-50%, -50%) scale(.6)}
+      10%{opacity:1}
+      100%{opacity:0;transform:translate(var(--dx), var(--dy)) scale(.9)}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">🧩</div>
+      <div>
+        <h1>整序バトル（プレイ）</h1>
+        <div class="muted small">最後の単語を置いた瞬間に判定 → 正解なら自動で次へ</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="index.html">🏠 入口</a>
+      <a href="seijo_edit.html">✏ 問題編集</a>
+    </nav>
+  </header>
+
+  <div class="wrap">
+    <section class="card">
+      <div id="fxLayer" class="fx-layer"></div>
+      <div class="row space">
+        <div>
+          <div class="muted small" id="statusLine">未開始</div>
+          <div class="sentence" id="sentenceLine">右の設定で開始してください。</div>
+          <div class="slotline" id="slots"></div>
+          <div class="chips" id="chips"></div>
+          <div id="toast" class="toast" style="display:none"></div>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="row">
+        <button id="btnSkip" class="bad">⏭ スキップ</button>
+        <button id="btnReveal">👀 答え</button>
+        <button id="btnReset" title="いまの問題を最初から">↩ リセット</button>
+      </div>
+
+      <div class="small muted" style="margin-top:10px">
+        使い方: 下の選択肢（丸いチップ）をクリック → 空所に入ります。<br/>
+        入れ直したいときは、空所の単語をクリックして戻せます。
+      </div>
+    </section>
+
+    <aside class="card">
+      <div class="kpi">
+        <div class="box">
+          <div class="muted small">進捗</div>
+          <div class="num" id="kpiProg">0/0</div>
+        </div>
+        <div class="box">
+          <div class="muted small">スコア</div>
+          <div class="num" id="kpiScore">0</div>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="grid">
+        <div>
+          <label>モード</label>
+          <select id="mode">
+            <option value="practice">練習（1人）</option>
+            <option value="duel">対戦（同端末・交代）</option>
+          </select>
+        </div>
+        <div>
+          <label>出題数</label>
+          <input id="count" type="number" min="1" value="10" />
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top:10px">
+        <div>
+          <label>制限時間（秒 / 1問）</label>
+          <input id="timePerQ" type="number" min="0" value="0" />
+        </div>
+        <div>
+          <label>出題順</label>
+          <select id="order">
+            <option value="random">ランダム</option>
+            <option value="inorder">登録順</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top:10px">
+        <div class="toggle">
+          <input class="ck" id="optSpeak" type="checkbox" checked />
+          <label for="optSpeak">🔊 発音（en-US）</label>
+        </div>
+        <div class="toggle">
+          <input class="ck" id="optSfx" type="checkbox" checked />
+          <label for="optSfx">🎵 効果音</label>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:12px">
+        <button id="btnStart" class="primary">▶ 開始</button>
+        <button id="btnStop">■ 終了</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <details>
+        <summary>問題バンク（確認用）</summary>
+        <div class="small muted" style="margin-top:8px">
+          ここは将来的に消してOKな枠です。今は動作確認用に残しています。
+        </div>
+        <table style="margin-top:8px">
+          <thead><tr><th>ID</th><th>英文</th></tr></thead>
+          <tbody id="bankTable"></tbody>
+        </table>
+      </details>
+
+      <div class="small muted" style="margin-top:10px">
+        ※ バンクが0件なら <a href="seijo_edit.html" style="color:var(--text)">問題編集</a>で作成してください。
+      </div>
+    </aside>
+  </div>
+
+<script>
+  const $ = (id)=>document.getElementById(id);
+
+  // ===== UI refs =====
+  const elSentence = $('sentenceLine');
+  const elSlots = $('slots');
+  const elChips = $('chips');
+  const elToast = $('toast');
+  const elStatus = $('statusLine');
+  const elProg = $('kpiProg');
+  const elScore = $('kpiScore');
+  const elBankTable = $('bankTable');
+  const elFx = $('fxLayer');
+
+  // ===== State =====
+  let bank = [];
+  let quiz = [];
+  let qIndex = -1;
+  let score = 0;
+  let turn = 0; // duel: 0=A,1=B
+  let timer = null;
+  let timeLeft = 0;
+
+  // per question
+  let puzzle = null; // {prefixText, suffixText, punctuation, correct, options:[{t,extra}], ...}
+  let slots = []; // {t:'', extra:false}
+  let options = []; // {t, extra, used}
+
+  // lock to prevent double-judgement when the last word is clicked rapidly
+  let locked = false;
+
+  // ===== Settings (persist) =====
+  const OPT_KEY = 'seijo_play_opts_v1';
+  function loadOpts(){
+    try{
+      const raw = localStorage.getItem(OPT_KEY);
+      if(!raw) return;
+      const o = JSON.parse(raw);
+      if(typeof o !== 'object' || !o) return;
+      if(typeof o.speak === 'boolean') $('optSpeak').checked = o.speak;
+      if(typeof o.sfx === 'boolean') $('optSfx').checked = o.sfx;
+    }catch(_){/* ignore */}
+  }
+  function saveOpts(){
+    const o = {
+      speak: !!$('optSpeak').checked,
+      sfx: !!$('optSfx').checked,
+    };
+    try{ localStorage.setItem(OPT_KEY, JSON.stringify(o)); }catch(_){/* ignore */}
+  }
+  $('optSpeak').addEventListener('change', saveOpts);
+  $('optSfx').addEventListener('change', saveOpts);
+
+  // ===== Speech (US) =====
+  let cachedVoice = null;
+  function pickVoice(){
+    try{
+      const voices = speechSynthesis.getVoices?.() || [];
+      cachedVoice = voices.find(v => String(v.lang||'').toLowerCase().startsWith('en-us'))
+        || voices.find(v => String(v.lang||'').toLowerCase().startsWith('en'))
+        || null;
+    }catch(_){ cachedVoice = null; }
+  }
+  if('speechSynthesis' in window){
+    pickVoice();
+    window.speechSynthesis.onvoiceschanged = pickVoice;
+  }
+  function speakToken(tok){
+    if(!$('optSpeak').checked) return;
+    if(!('speechSynthesis' in window)) return;
+    const text = String(tok || '').replaceAll('_', ' ').trim();
+    if(!text) return;
+    try{ speechSynthesis.cancel(); }catch(_){/* ignore */}
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.rate = 1.0;
+    u.pitch = 1.0;
+    u.volume = 1.0;
+    if(cachedVoice) u.voice = cachedVoice;
+    try{ speechSynthesis.speak(u); }catch(_){/* ignore */}
+  }
+
+  // ===== SFX =====
+  // Correct sound uses the provided mp3 (no external dependency).
+  const OK_SFX_URL = 'Quiz-Button02-1(Multi).mp3';
+  let okAudio = null;
+  function initOkAudio(){
+    if(okAudio) return;
+    okAudio = new Audio(OK_SFX_URL);
+    okAudio.preload = 'auto';
+    okAudio.volume = 0.9;
+  }
+
+  // Wrong sound + fallback uses WebAudio.
+  let audioCtx = null;
+  function ctx(){
+    if(!audioCtx){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return null;
+      audioCtx = new AC();
+    }
+    if(audioCtx.state === 'suspended'){
+      // requires user gesture; harmless if already running
+      audioCtx.resume().catch(()=>{});
+    }
+    return audioCtx;
+  }
+
+  // Prime audio on first user gesture (helps autoplay policies).
+  document.addEventListener('pointerdown', () => {
+    initOkAudio();
+    ctx();
+  }, { once: true });
+  function beep(freq, durMs, gain){
+    if(!$('optSfx').checked) return;
+    const c = ctx();
+    if(!c) return;
+    const t0 = c.currentTime;
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(Math.max(0.0001, gain || 0.12), t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + (durMs/1000));
+    osc.connect(g); g.connect(c.destination);
+    osc.start(t0);
+    osc.stop(t0 + (durMs/1000));
+  }
+  function sfxCorrect(){
+    if(!$('optSfx').checked) return;
+    initOkAudio();
+    if(okAudio){
+      try{ okAudio.currentTime = 0; }catch(_){/* ignore */}
+      const p = okAudio.play();
+      if(p && typeof p.catch === 'function'){
+        p.catch(()=>{
+          // fallback (e.g., autoplay policy)
+          beep(880, 140, 0.14);
+          setTimeout(()=>beep(1320, 160, 0.12), 110);
+        });
+      }
+      return;
+    }
+    // fallback
+    beep(880, 140, 0.14);
+    setTimeout(()=>beep(1320, 160, 0.12), 110);
+  }
+  function sfxWrong(){
+    // short "boo"
+    beep(220, 220, 0.10);
+  }
+
+  // ===== Visual FX =====
+  function fxPop(){
+    // subtle card pop
+    const card = elSlots.closest('.card');
+    if(!card) return;
+    card.classList.add('fx-pop');
+    setTimeout(()=>card.classList.remove('fx-pop'), 220);
+  }
+  function fxBurst(kind){
+    if(!elFx) return;
+    const rect = elSlots.getBoundingClientRect();
+    const root = elFx.getBoundingClientRect();
+    const cx = (rect.left + rect.right) / 2 - root.left;
+    const cy = (rect.top + rect.bottom) / 2 - root.top;
+
+    const n = kind === 'bad' ? 10 : 14;
+    for(let i=0;i<n;i++){
+      const p = document.createElement('div');
+      p.className = 'fx-particle';
+      const ang = Math.random() * Math.PI * 2;
+      const dist = (kind === 'bad' ? 60 : 90) + Math.random() * 60;
+      const dx = Math.cos(ang) * dist;
+      const dy = Math.sin(ang) * dist;
+      p.style.left = `${cx}px`;
+      p.style.top = `${cy}px`;
+      p.style.setProperty('--dx', `${dx}px`);
+      p.style.setProperty('--dy', `${dy}px`);
+      p.style.background = kind === 'bad' ? 'rgba(239,68,68,.92)' : 'rgba(34,197,94,.92)';
+      elFx.appendChild(p);
+      setTimeout(()=>p.remove(), 650);
+    }
+  }
+
+  function showToast(kind, html){
+    elToast.style.display = 'block';
+    elToast.className = 'toast ' + (kind || '');
+    elToast.innerHTML = html;
+  }
+  function hideToast(){
+    elToast.style.display = 'none';
+    elToast.className = 'toast';
+    elToast.textContent = '';
+  }
+
+  function loadBank(){
+    bank = readBank().filter(q=>q.en_sentence);
+    renderBankTable();
+  }
+
+  function renderBankTable(){
+    if(!elBankTable) return;
+    elBankTable.innerHTML = '';
+    for(const q of bank.slice(0,50)){
+      const tr = document.createElement('tr');
+      const td1 = document.createElement('td');
+      const td2 = document.createElement('td');
+      td1.textContent = q.example_id || '(no id)';
+      td2.textContent = q.en_sentence;
+      tr.appendChild(td1); tr.appendChild(td2);
+      elBankTable.appendChild(tr);
+    }
+  }
+
+  function buildQuiz(){
+    const mode = $('mode').value;
+    const order = $('order').value;
+    const count = Math.max(1, parseInt($('count').value || '10', 10));
+
+    const src = bank.slice();
+    if(order === 'random'){
+      for(let i=src.length-1;i>0;i--){
+        const j = Math.floor(Math.random()*(i+1));
+        [src[i], src[j]] = [src[j], src[i]];
+      }
+    }
+    quiz = src.slice(0, Math.min(count, src.length));
+
+    qIndex = -1;
+    score = 0;
+    turn = 0;
+
+    elScore.textContent = String(score);
+    elProg.textContent = `0/${quiz.length}`;
+
+    if(quiz.length === 0){
+      elSentence.textContent = '問題バンクが空です。まずは「問題編集」で作成してください。';
+      elSlots.innerHTML = '';
+      elChips.innerHTML = '';
+      return;
+    }
+
+    nextQuestion(true);
+
+    if(mode === 'duel'){
+      showToast('', '対戦モード: A → B → A… と交代で解きます。');
+      setTimeout(hideToast, 1500);
+    }else{
+      hideToast();
+    }
+  }
+
+  function stopQuiz(){
+    clearTimer();
+    quiz = [];
+    qIndex = -1;
+    puzzle = null;
+    slots = [];
+    options = [];
+    elStatus.textContent = '終了';
+    elSentence.textContent = '右の設定で開始してください。';
+    elSlots.innerHTML = '';
+    elChips.innerHTML = '';
+    hideToast();
+    elProg.textContent = '0/0';
+  }
+
+  function clearTimer(){
+    if(timer){ clearInterval(timer); timer = null; }
+  }
+
+  function startTimer(){
+    clearTimer();
+    const sec = Math.max(0, parseInt($('timePerQ').value || '0', 10));
+    if(sec <= 0){
+      elStatus.textContent = statusText();
+      return;
+    }
+    timeLeft = sec;
+    elStatus.textContent = statusText() + ` | ⏳ ${timeLeft}s`;
+    timer = setInterval(()=>{
+      timeLeft -= 1;
+      if(timeLeft <= 0){
+        clearTimer();
+        showToast('bad', '時間切れ… 次の問題へ');
+        setTimeout(()=>{ hideToast(); skipQuestion(true); }, 700);
+        return;
+      }
+      elStatus.textContent = statusText() + ` | ⏳ ${timeLeft}s`;
+    }, 1000);
+  }
+
+  function statusText(){
+    if(quiz.length === 0) return '未開始';
+    const mode = $('mode').value;
+    const who = (mode === 'duel') ? (turn === 0 ? '🅰 A' : '🅱 B') : '👤';
+    return `${who} | 問${qIndex+1}/${quiz.length}`;
+  }
+
+  function nextQuestion(fromStart=false){
+    clearTimer();
+    qIndex += 1;
+    if(qIndex >= quiz.length){
+      endQuiz();
+      return;
+    }
+
+    const q = quiz[qIndex];
+    puzzle = buildPuzzleFromQuestion(q);
+
+    // init slots
+    slots = puzzle.correct.map(()=>({t:'', extra:false}));
+    options = puzzle.options.map(o=>({t:o.t, extra:o.extra, used:false}));
+
+    renderPuzzle(q);
+
+    elProg.textContent = `${qIndex+1}/${quiz.length}`;
+    elScore.textContent = String(score);
+
+    startTimer();
+
+    if(!fromStart && $('mode').value === 'duel'){
+      // 交代 (問題ごと)
+      turn = 1 - turn;
+      elStatus.textContent = statusText();
+    }
+  }
+
+  function endQuiz(){
+    clearTimer();
+    elStatus.textContent = '完了';
+    const mode = $('mode').value;
+    if(mode === 'duel'){
+      // duel: score is total correct. (簡易)
+      showToast('good', `終了！ 合計スコア: <b>${score}</b>`);
+    }else{
+      showToast('good', `終了！ スコア: <b>${score}</b> / ${quiz.length}`);
+    }
+    elSentence.textContent = 'おつかれさまでした。右の「開始」でまた遊べます。';
+    elSlots.innerHTML = '';
+    elChips.innerHTML = '';
+  }
+
+  function renderPuzzle(q){
+    hideToast();
+    locked = false;
+
+    const prefix = puzzle.prefixText ? puzzle.prefixText + ' ' : '';
+    const suffix = puzzle.suffixText ? ' ' + puzzle.suffixText : '';
+
+    elSentence.textContent = '';
+    const line = document.createElement('div');
+    line.className = 'sentence';
+
+    // Sentence line with blanks
+    const blanks = slots.map(()=> '____').join(' ');
+    const jp = (q.show_jp && q.ja_translation) ? `\n（${q.ja_translation}）` : '';
+    line.textContent = `${prefix}${blanks}${suffix}${puzzle.punctuation}${jp}`;
+    elSentence.replaceChildren(line);
+
+    // slots UI
+    elSlots.innerHTML = '';
+    slots.forEach((s, i)=>{
+      const d = document.createElement('div');
+      d.className = 'slot' + (s.t ? ' filled' : '');
+      d.textContent = s.t ? s.t.replaceAll('_',' ') : ' '; 
+      d.title = s.t ? 'クリックで戻す' : '';
+      d.addEventListener('click', ()=>{
+        if(locked) return;
+        if(!s.t) return;
+        speakToken(s.t);
+        // return token to first matching used option
+        const idx = options.findIndex(o=>o.used && o.t === s.t && o.extra === s.extra);
+        if(idx >= 0) options[idx].used = false;
+        s.t = ''; s.extra = false;
+        renderSlotsAndChips();
+      });
+      elSlots.appendChild(d);
+    });
+
+    renderSlotsAndChips();
+    elStatus.textContent = statusText();
+  }
+
+  function renderSlotsAndChips(){
+    // update slots visuals
+    const slotEls = elSlots.querySelectorAll('.slot');
+    slots.forEach((s,i)=>{
+      const el = slotEls[i];
+      el.className = 'slot' + (s.t ? ' filled' : '');
+      el.textContent = s.t ? s.t.replaceAll('_',' ') : ' ';
+    });
+
+    // chips
+    elChips.innerHTML = '';
+    options.forEach((o, idx)=>{
+      const b = document.createElement('div');
+      b.className = 'chip' + (o.extra ? ' extra' : '') + (o.used ? ' used' : '');
+      b.textContent = o.t.replaceAll('_',' ');
+      b.addEventListener('click', ()=>{
+        if(locked) return;
+        if(o.used) return;
+        speakToken(o.t);
+        const emptyIdx = slots.findIndex(s=>!s.t);
+        if(emptyIdx < 0) return;
+        slots[emptyIdx].t = o.t;
+        slots[emptyIdx].extra = o.extra;
+        o.used = true;
+        renderSlotsAndChips();
+        maybeAutoCheck();
+      });
+      elChips.appendChild(b);
+    });
+
+    // update sentence blanks view
+    const blanks = slots.map(s=> s.t ? s.t.replaceAll('_',' ') : '____').join(' ');
+    const line = elSentence.querySelector('.sentence');
+    if(line){
+      // rebuild same line but replace blanks portion only
+      const q = quiz[qIndex];
+      const prefix = puzzle.prefixText ? puzzle.prefixText + ' ' : '';
+      const suffix = puzzle.suffixText ? ' ' + puzzle.suffixText : '';
+      const jp = (q.show_jp && q.ja_translation) ? `\n（${q.ja_translation}）` : '';
+      line.textContent = `${prefix}${blanks}${suffix}${puzzle.punctuation}${jp}`;
+    }
+  }
+
+  function maybeAutoCheck(){
+    if(locked) return;
+    if(slots.some(s=>!s.t)) return;
+
+    // 判定
+    const picked = slots.map(s=>s.t);
+    const ok = arraysEqual(picked, puzzle.correct);
+
+    // visualize
+    const slotEls = elSlots.querySelectorAll('.slot');
+    for(let i=0;i<puzzle.correct.length;i++){
+      const el = slotEls[i];
+      if(picked[i] === puzzle.correct[i]) el.classList.add('correct');
+      else el.classList.add('wrong');
+    }
+
+    if(ok){
+      locked = true;
+      clearTimer();
+      sfxCorrect();
+      fxPop();
+      fxBurst('good');
+      score += 1;
+      elScore.textContent = String(score);
+      showToast('good', '正解！ 次の問題へ');
+      setTimeout(()=>{ hideToast(); nextQuestion(false); }, 650);
+    }else{
+      sfxWrong();
+      fxPop();
+      fxBurst('bad');
+      showToast('bad', '惜しい… 入れ替えてみよう');
+      setTimeout(()=>{ hideToast(); }, 900);
+    }
+  }
+
+  function skipQuestion(fromTimeout=false){
+    clearTimer();
+    locked = true;
+    showToast('bad', fromTimeout ? '時間切れ' : 'スキップ');
+    setTimeout(()=>{ hideToast(); nextQuestion(false); }, 250);
+  }
+
+  function revealAnswer(){
+    if(!puzzle) return;
+    showToast('', `答え: <code>${puzzle.correct.map(t=>t.replaceAll('_',' ')).join(' ')}</code>`);
+  }
+
+  function resetCurrent(){
+    if(!puzzle) return;
+    clearTimer();
+    locked = false;
+    slots = puzzle.correct.map(()=>({t:'', extra:false}));
+    options = puzzle.options.map(o=>({t:o.t, extra:o.extra, used:false}));
+    renderSlotsAndChips();
+    hideToast();
+    startTimer();
+  }
+
+  // ===== events =====
+  $('btnStart').addEventListener('click', ()=>{ loadBank(); buildQuiz(); });
+  $('btnStop').addEventListener('click', stopQuiz);
+  $('btnSkip').addEventListener('click', ()=>skipQuestion(false));
+  $('btnReveal').addEventListener('click', revealAnswer);
+  $('btnReset').addEventListener('click', resetCurrent);
+
+  // init
+  loadOpts();
+  loadBank();
+  elStatus.textContent = '未開始';
+
+</script>
+</body>
+</html>
